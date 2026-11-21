@@ -2,9 +2,13 @@
 // packages and the old Replit APIs (main.n4y4n-server.repl.co, mainserver.repl.co,
 // api.nayan-project.repl.co, main-server.nayan-api.repl.co).
 // Credits: VERSION-X | Developer: TAWSHIF AHMED NAYIM
-// Engines: yt-dlp (video downloaders), Pollinations (gpt / talk / ai-img),
-// Tesseract.js (img2text OCR), DuckDuckGo images (pintarest).
+// Engines: yt-dlp + ytdl-core (YouTube), TikTok/X page scrape, iTunes (Spotify
+// 30s preview), OCR.space (img2text), Pollinations (gpt / talk / ai-img),
+// Openverse (pintarest). yt-dlp/Tesseract are used only when available
+// (full host); on serverless hosts the other backends above take over.
 // Run:  npm install  &&  npm start        (needs yt-dlp on PATH + Node 20)
+
+process.env.YTDL_NO_UPDATE = "1"; // ytdl-core must not phone home for updates
 
 const express = require("express");
 const axios = require("axios");
@@ -138,7 +142,7 @@ footer b{color:#cfc9f2}
 <div class="card"><div class="row"><span class="m">POST</span><button class="mini" data-copy="/api/imgur">Copy</button></div><div class="p">/api/imgur</div><div class="d">Upload an image, get an Imgur link.</div></div>
 <div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/health">Copy</button></div><div class="p">/api/health</div><div class="d">Check if the API is online.</div></div>
 </div>
-<p class="note">Note: video downloaders and OCR need yt-dlp / Tesseract, which cannot run on the free Vercel host &mdash; those endpoints return a JSON error there. AI, image and search endpoints work fully.</p>
+<p class="note">Note: YouTube / Facebook / Instagram downloaders need yt-dlp, which cannot run on the free Vercel host &mdash; those return a JSON error there. TikTok, X, Spotify preview and OCR work via free public services. AI, image and search endpoints work fully.</p>
 <footer>Credits: <b>VERSION-X</b> &nbsp;|&nbsp; Developer: <b>TAWSHIF AHMED NAYIM</b></footer>
 </div>
 <script>
@@ -188,10 +192,21 @@ async function getJson(url, params) {
 }
 app.get("/api/ytdown", async (req, res) => {
   if (!req.query.url) return sendError(res, 400, "missing url");
+  // Full host: yt-dlp (best quality). Serverless (no yt-dlp): ytdl-core.
   try {
     const info = await ytdlpInfo(req.query.url);
     res.json({ data: { video: bestVideoUrl(info), title: info.title || "", data: { duration: info.duration, uploader: info.uploader } } });
-  } catch (e) { sendError(res, 502, e.message); }
+  } catch (e1) {
+    try {
+      const ytdl = require("@distube/ytdl-core");
+      const info = await ytdl.getInfo(req.query.url);
+      const fmt = ytdl.chooseFormat(info.formats, { quality: "18" })
+        || ytdl.chooseFormat(info.formats, { filter: (f) => f.hasVideo && f.hasAudio });
+      if (!fmt || !fmt.url) throw new Error("no playable format");
+      const d = info.videoDetails || {};
+      res.json({ data: { video: fmt.url, title: d.title || "", data: { duration: parseInt(d.lengthSeconds || 0, 10), uploader: (d.author && d.author.name) || "" } } });
+    } catch (e2) { sendError(res, 502, e1.message + " | ytdl-core: " + e2.message); }
+  }
 });
 
 app.get("/api/ndown", async (req, res) => {
@@ -212,25 +227,67 @@ app.get("/api/fbdown", async (req, res) => {
   } catch (e) { sendError(res, 502, e.message); }
 });
 
+// TikTok: fetch the public video page and read the direct mp4 URL from the
+// page data (no yt-dlp needed, works serverless). Same response shape as yt-dlp.
+async function tiktokScrape(url) {
+  const r = await axios.get(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", "Accept": "text/html,application/xhtml+xml", "Accept-Language": "en-US,en;q=0.9" }, timeout: 20000, maxRedirects: 5 });
+  const html = typeof r.data === "string" ? r.data : "";
+  const unesc = (s) => { try { return JSON.parse('"' + s + '"'); } catch (_) { return s.replace(/\\u002F/g, "/"); } };
+  let item = null;
+  const m = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application\/json">(.*?)<\/script>/s);
+  if (m) {
+    try {
+      const j = JSON.parse(m[1]);
+      const vd = (j.__DEFAULT_SCOPE__ || {})["webapp.video-detail"];
+      item = vd && vd.itemInfo && vd.itemInfo.itemStruct;
+    } catch (_) {}
+  }
+  let video = "", title = "", avatar = "", name = "", audio = "", duration = 0;
+  if (item) {
+    video = (item.video && (item.video.playAddr || item.video.downloadAddr)) || "";
+    title = item.desc || "";
+    name = (item.author && item.author.nickname) || "";
+    avatar = (item.author && (item.author.avatarLarger || item.author.avatarThumb)) || "";
+    audio = (item.music && item.music.playUrl) || "";
+    duration = (item.video && item.video.duration) || 0;
+  }
+  const grab = (re) => { const g = html.match(re); return g ? unesc(g[1]) : ""; };
+  if (!video) video = grab(/"playAddr":"((?:[^"\\]|\\.)*)"/);
+  if (!title) title = grab(/"desc":"((?:[^"\\]|\\.)*)"/);
+  if (!name) name = grab(/"nickname":"((?:[^"\\]|\\.)*)"/);
+  if (!avatar) avatar = grab(/"avatarLarger":"((?:[^"\\]|\\.)*)"/);
+  if (!audio) audio = video;
+  if (!video) throw new Error("no video found (TikTok blocked the request or the link is wrong)");
+  return { video, title, author: { avatar, name }, audio, duration };
+}
+
 app.get("/api/tikdown", async (req, res) => {
   if (!req.query.url) return sendError(res, 400, "missing url");
   try {
-    const info = await ytdlpInfo(req.query.url);
-    res.json({ data: {
-      video: bestVideoUrl(info),
-      title: info.title || "",
-      author: { avatar: info.thumbnail || "", name: info.uploader || "" },
-      audio: bestAudioUrl(info),
-      duration: info.duration || 0,
-    } });
+    const d = await tiktokScrape(req.query.url);
+    res.json({ data: d });
   } catch (e) { sendError(res, 502, e.message); }
 });
+
+// X / Twitter: fetch the public post page and pick the highest-resolution
+// direct mp4 variant from the page data (no yt-dlp needed, works serverless).
+async function xScrape(url) {
+  const r = await axios.get(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", "Accept": "text/html,application/xhtml+xml", "Accept-Language": "en-US,en;q=0.9" }, timeout: 20000, maxRedirects: 5 });
+  const html = typeof r.data === "string" ? r.data : "";
+  const re = /https:\/\/video\.twimg\.com\/ext_tw_video\/[^"\\\s]*?\/vid\/avc1\/(\d+)x(\d+)\/[^"\\\s]*?\.mp4[^"\\\s]*/g;
+  let best = null, bestArea = 0, m;
+  while ((m = re.exec(html))) {
+    const area = parseInt(m[1], 10) * parseInt(m[2], 10);
+    if (area > bestArea) { bestArea = area; best = m[0].replace(/\\\//g, "/").replace(/\\u0026/g, "&"); }
+  }
+  if (!best) throw new Error("no video found (X blocked the request or the post has no video)");
+  return best;
+}
 
 app.get("/api/twitterdown", async (req, res) => {
   if (!req.query.url) return sendError(res, 400, "missing url");
   try {
-    const info = await ytdlpInfo(req.query.url);
-    res.json({ data: { HD: bestVideoUrl(info) } });
+    res.json({ data: { HD: await xScrape(req.query.url) } });
   } catch (e) { sendError(res, 502, e.message); }
 });
 
@@ -272,28 +329,39 @@ app.get("/api/talk", async (req, res) => {
   } catch (e) { sendError(res, 502, e.message); }
 });
 
-// --- img2text (OCR with Tesseract.js) ---
+// --- img2text (OCR.space free API; local Tesseract fallback on full hosts) ---
 app.get("/api/img2text", async (req, res) => {
   if (!req.query.url) return sendError(res, 400, "missing url");
-  const tmp = path.join(os.tmpdir(), "najmul-ocr-" + Date.now() + ".png");
   try {
-    const r = await axios.get(req.query.url, { responseType: "arraybuffer", timeout: 30000, headers: UA });
-    fs.writeFileSync(tmp, Buffer.from(r.data));
-    // Trained data is bundled in ./tessdata, so no download happens at runtime.
-    const { data } = await Tesseract.recognize(tmp, "eng", { langPath: path.join(__dirname, "tessdata") });
-    res.json({ text: (data.text || "").trim() });
-  } catch (e) { sendError(res, 502, e.message); }
-  finally { try { fs.unlinkSync(tmp); } catch (_) {} }
+    const key = process.env.OCR_SPACE_API_KEY || "helloworld"; // free key: ocr.space (no card)
+    const r = await axios.get("https://api.ocr.space/parse/imageurl", { params: { apikey: key, url: req.query.url, language: "eng", isOverlayRequired: "false", scale: "true" }, timeout: 40000, headers: UA });
+    const parsed = r.data && r.data.ParsedResults && r.data.ParsedResults[0];
+    const text = (parsed && parsed.ParsedText || "").trim();
+    if (!text) throw new Error("no text found in image");
+    return res.json({ text });
+  } catch (e) {
+    if (process.env.VERCEL === "1") return sendError(res, 502, e.message);
+    // Full host fallback: local Tesseract (bundled tessdata).
+    const tmp = path.join(os.tmpdir(), "najmul-ocr-" + Date.now() + ".png");
+    try {
+      const r = await axios.get(req.query.url, { responseType: "arraybuffer", timeout: 30000, headers: UA });
+      fs.writeFileSync(tmp, Buffer.from(r.data));
+      const { data } = await Tesseract.recognize(tmp, "eng", { langPath: path.join(__dirname, "tessdata") });
+      res.json({ text: (data.text || "").trim() });
+    } catch (e2) { sendError(res, 502, e2.message); }
+    finally { try { fs.unlinkSync(tmp); } catch (_) {} }
+  }
 });
 
-// --- spotify: search the song on YouTube, return playable audio URL ---
+// --- spotify: iTunes Search (free, no key) — returns a 30-second preview clip ---
 app.get("/api/spotify", async (req, res) => {
   if (!req.query.q) return sendError(res, 400, "missing q");
   try {
-    const info = await ytdlpInfo("ytsearch1:" + req.query.q, ["--flat-playlist"]);
-    const entry = (info.entries && info.entries[0]) || info;
-    const full = await ytdlpInfo(entry.webpage_url || entry.url);
-    res.json({ data: { audio: bestAudioUrl(full), title: full.title || entry.title || "" } });
+    const data = await getJson("https://itunes.apple.com/search", { term: req.query.q, media: "music", entity: "song", limit: 1 });
+    const t = (data.results || [])[0];
+    if (!t || !t.previewUrl) throw new Error("song not found");
+    const title = ((t.artistName || "") + (t.artistName && t.trackName ? " - " : "") + (t.trackName || "")).trim();
+    res.json({ data: { audio: t.previewUrl, title } });
   } catch (e) { sendError(res, 502, e.message); }
 });
 
