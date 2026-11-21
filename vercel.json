@@ -1,1 +1,9 @@
-{"$schema":"https://openapi.vercel.sh/vercel.json","functions":{"api/index.js":{"excludeFiles":"tessdata/**"}}}
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/index.js": { "excludeFiles": "tessdata/**" }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" }
+  ]
+}
