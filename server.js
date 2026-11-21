@@ -357,55 +357,7 @@ async function ocrSpaceUpload(key, buf, ctype, ext) {
   return (parsed && parsed.ParsedText || "").trim();
 }
 
-// Hugging Face vision-model OCR fallback (needs HF_TOKEN env; free Inference API).
-// TrOCR is retired on hf-inference and Qwen2-VL-7B-Instruct isn't deployed by
-// any provider (both confirmed 2026-11-21), so the fallback uses
-// Qwen2.5-VL-7B-Instruct via the Featherless AI provider on the router:
-// model "Qwen/Qwen2.5-VL-7B-Instruct:featherless-ai", OpenAI-compatible chat
-// completions endpoint. The model reads the image and returns only the
-// transcribed text. NOTE: Inference Providers may bill per use to the HF
-// account (spending limit shown in HF Settings); no payment method is on file,
-// so a call that needs payment fails instead of charging.
-// Diagnostic mode: failures carry the real HF status/body in the message.
-function hfErrDetail(e) {
-  if (!e.response) return e.message || "no response";
-  const body = typeof e.response.data === "string" ? e.response.data : JSON.stringify(e.response.data || "");
-  return "HTTP " + e.response.status + " " + body.slice(0, 200);
-}
-async function hfVlmOcr(buf, ctype) {
-  const dataUrl = "data:" + ctype + ";base64," + buf.toString("base64");
-  try {
-    const r = await axios.post(
-      "https://router.huggingface.co/v1/chat/completions",
-      {
-        model: "Qwen/Qwen2.5-VL-7B-Instruct:featherless-ai",
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "Transcribe all text visible in this image exactly. Reply with only the transcribed text, nothing else." },
-              { type: "image_url", image_url: { url: dataUrl } },
-            ],
-          },
-        ],
-        max_tokens: 300,
-        temperature: 0,
-      },
-      {
-        headers: { Authorization: "Bearer " + process.env.HF_TOKEN, "Content-Type": "application/json" },
-        timeout: 7000,
-        maxContentLength: 10 * 1024 * 1024,
-      }
-    );
-    const t = ((((r.data || {}).choices || [])[0] || {}).message || {}).content || "";
-    if (t.trim()) return t.trim();
-    throw new Error("hf: HTTP 200 empty result");
-  } catch (e) {
-    throw new Error("hf: " + hfErrDetail(e));
-  }
-}
-
-// --- img2text (OCR.space free API; Hugging Face TrOCR fallback; local Tesseract fallback on full hosts) ---
+// --- img2text (OCR.space free API; local Tesseract fallback on full hosts) ---
 // The image is downloaded here and uploaded to OCR.space, because OCR.space
 // often cannot fetch the URL itself (the host rate-limits it, e.g. Imgur 429).
 app.get("/api/img2text", async (req, res) => {
@@ -418,13 +370,9 @@ app.get("/api/img2text", async (req, res) => {
     const ctype = String(img.headers["content-type"] || "image/png").split(";")[0];
     const ext = ctype === "image/jpeg" ? "jpg" : ctype === "image/webp" ? "webp" : "png";
     const text = await ocrSpaceUpload(key, buf, ctype, ext).catch(async (e) => {
-      // The shared demo key is often rate-limited (429). If a Hugging Face
-      // token is configured, fall back to TrOCR instead of waiting; otherwise
-      // one retry after a pause.
+      // A personal OCR.space key (env OCR_SPACE_API_KEY) rarely rate-limits;
+      // the shared demo key does, so on 429/5xx retry once after a pause.
       if (e.response && (e.response.status === 429 || e.response.status >= 500)) {
-        if (process.env.HF_TOKEN) {
-          try { return await hfVlmOcr(buf, ctype); } catch (hfErr) { throw new Error("ocr.space 429; hf fallback failed: " + hfErr.message); }
-        }
         await new Promise((r2) => setTimeout(r2, 4000));
         return ocrSpaceUpload(key, buf, ctype, ext);
       }
