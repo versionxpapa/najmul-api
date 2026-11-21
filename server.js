@@ -195,8 +195,8 @@ async function getJson(url, params) {
 async function youtubeAndroidPlayer(videoId) {
   const r = await axios.post(
     "https://www.youtube.com/youtubei/v1/player?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
-    { context: { client: { clientName: "ANDROID", clientVersion: "19.09.37", androidSdkVersion: 30 } }, videoId, playbackContext: { contentPlaybackContext: { vis: 0, splay: false, html5Preference: "HTML5_PREF_WANTS" } }, racyCheckOk: true, contentCheckOk: true },
-    { timeout: 20000, headers: { "Content-Type": "application/json", "User-Agent": "com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip" } });
+    { context: { client: { clientName: "ANDROID", clientVersion: "19.09.37", androidSdkVersion: 30, hl: "en", gl: "US", userAgent: "com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip" } }, videoId, playbackContext: { contentPlaybackContext: { vis: 0, splay: false, html5Preference: "HTML5_PREF_WANTS" } }, racyCheckOk: true, contentCheckOk: true },
+    { timeout: 20000, headers: { "Content-Type": "application/json", "User-Agent": "com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip", "X-Goog-Api-Format-Version": "2", "X-YouTube-Client-Name": "3", "X-YouTube-Client-Version": "19.09.37" } });
   const d = r.data || {};
   const status = d.playabilityStatus && d.playabilityStatus.status;
   if (status && status !== "OK") throw new Error("YouTube: " + status + " " + ((d.playabilityStatus && d.playabilityStatus.reason) || ""));
@@ -344,6 +344,19 @@ app.get("/api/talk", async (req, res) => {
   } catch (e) { sendError(res, 502, e.message); }
 });
 
+// Upload image bytes to OCR.space and return the parsed text.
+async function ocrSpaceUpload(key, buf, ctype, ext) {
+  const form = new FormData();
+  form.append("file", buf, { filename: "image." + ext, contentType: ctype });
+  form.append("apikey", key);
+  form.append("language", "eng");
+  form.append("isOverlayRequired", "false");
+  form.append("scale", "true");
+  const r = await axios.post("https://api.ocr.space/parse/image", form, { headers: form.getHeaders(), timeout: 40000, maxContentLength: 5 * 1024 * 1024 });
+  const parsed = r.data && r.data.ParsedResults && r.data.ParsedResults[0];
+  return (parsed && parsed.ParsedText || "").trim();
+}
+
 // --- img2text (OCR.space free API; local Tesseract fallback on full hosts) ---
 // The image is downloaded here and uploaded to OCR.space, because OCR.space
 // often cannot fetch the URL itself (the host rate-limits it, e.g. Imgur 429).
@@ -356,15 +369,14 @@ app.get("/api/img2text", async (req, res) => {
     if (buf.length > 1024 * 1024) throw new Error("image too large for free OCR (max 1 MB)");
     const ctype = String(img.headers["content-type"] || "image/png").split(";")[0];
     const ext = ctype === "image/jpeg" ? "jpg" : ctype === "image/webp" ? "webp" : "png";
-    const form = new FormData();
-    form.append("file", buf, { filename: "image." + ext, contentType: ctype });
-    form.append("apikey", key);
-    form.append("language", "eng");
-    form.append("isOverlayRequired", "false");
-    form.append("scale", "true");
-    const r = await axios.post("https://api.ocr.space/parse/image", form, { headers: form.getHeaders(), timeout: 40000, maxContentLength: 5 * 1024 * 1024 });
-    const parsed = r.data && r.data.ParsedResults && r.data.ParsedResults[0];
-    const text = (parsed && parsed.ParsedText || "").trim();
+    const text = await ocrSpaceUpload(key, buf, ctype, ext).catch(async (e) => {
+      // The shared demo key is often rate-limited (429) — one retry after a pause.
+      if (e.response && (e.response.status === 429 || e.response.status >= 500)) {
+        await new Promise((r2) => setTimeout(r2, 2500));
+        return ocrSpaceUpload(key, buf, ctype, ext);
+      }
+      throw e;
+    });
     if (!text) throw new Error("no text found in image");
     return res.json({ text });
   } catch (e) {
