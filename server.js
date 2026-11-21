@@ -2,7 +2,7 @@
 // packages and the old Replit APIs (main.n4y4n-server.repl.co, mainserver.repl.co,
 // api.nayan-project.repl.co, main-server.nayan-api.repl.co).
 // Credits: VERSION-X | Developer: TAWSHIF AHMED NAYIM
-// Engines: yt-dlp + ytdl-core (YouTube), TikTok/X page scrape, iTunes (Spotify
+// Engines: yt-dlp + InnerTube ANDROID (YouTube), TikTok/X page scrape, iTunes (Spotify
 // 30s preview), OCR.space (img2text), Pollinations (gpt / talk / ai-img),
 // Openverse (pintarest). yt-dlp/Tesseract are used only when available
 // (full host); on serverless hosts the other backends above take over.
@@ -190,22 +190,37 @@ async function getJson(url, params) {
     return JSON.parse(out);
   }
 }
+// YouTube via InnerTube ANDROID player API (plain axios, no library):
+// the same endpoint yt-dlp's android client uses. Returns a direct mp4 URL.
+async function youtubeAndroidPlayer(videoId) {
+  const r = await axios.post(
+    "https://www.youtube.com/youtubei/v1/player?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
+    { context: { client: { clientName: "ANDROID", clientVersion: "19.09.37", androidSdkVersion: 30 } }, videoId, playbackContext: { contentPlaybackContext: { vis: 0, splay: false, html5Preference: "HTML5_PREF_WANTS" } }, racyCheckOk: true, contentCheckOk: true },
+    { timeout: 20000, headers: { "Content-Type": "application/json", "User-Agent": "com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip" } });
+  const d = r.data || {};
+  const status = d.playabilityStatus && d.playabilityStatus.status;
+  if (status && status !== "OK") throw new Error("YouTube: " + status + " " + ((d.playabilityStatus && d.playabilityStatus.reason) || ""));
+  const fmts = ((d.streamingData || {}).formats || []).filter((f) => f.url);
+  const pick = fmts.find((f) => f.itag === 22) || fmts.find((f) => f.itag === 18)
+    || fmts.filter((f) => (f.mimeType || "").includes("video/mp4")).sort((a, b) => (b.width || 0) - (a.width || 0))[0];
+  if (!pick) throw new Error("YouTube: no playable format");
+  const vd = d.videoDetails || {};
+  return { video: pick.url, title: vd.title || "", duration: parseInt(vd.lengthSeconds || 0, 10), uploader: vd.author || "" };
+}
+
 app.get("/api/ytdown", async (req, res) => {
   if (!req.query.url) return sendError(res, 400, "missing url");
-  // Full host: yt-dlp (best quality). Serverless (no yt-dlp): ytdl-core.
+  // Full host: yt-dlp (best quality). Serverless (no yt-dlp): InnerTube ANDROID.
   try {
     const info = await ytdlpInfo(req.query.url);
     res.json({ data: { video: bestVideoUrl(info), title: info.title || "", data: { duration: info.duration, uploader: info.uploader } } });
   } catch (e1) {
     try {
-      const ytdl = require("@distube/ytdl-core");
-      const info = await ytdl.getInfo(req.query.url);
-      const fmt = ytdl.chooseFormat(info.formats, { quality: "18" })
-        || ytdl.chooseFormat(info.formats, { filter: (f) => f.hasVideo && f.hasAudio });
-      if (!fmt || !fmt.url) throw new Error("no playable format");
-      const d = info.videoDetails || {};
-      res.json({ data: { video: fmt.url, title: d.title || "", data: { duration: parseInt(d.lengthSeconds || 0, 10), uploader: (d.author && d.author.name) || "" } } });
-    } catch (e2) { sendError(res, 502, e1.message + " | ytdl-core: " + e2.message); }
+      const m = String(req.query.url).match(/(?:v=|youtu\.be\/|shorts\/)([A-Za-z0-9_-]{11})/);
+      if (!m) throw new Error("not a YouTube watch link");
+      const d = await youtubeAndroidPlayer(m[1]);
+      res.json({ data: { video: d.video, title: d.title, data: { duration: d.duration, uploader: d.uploader } } });
+    } catch (e2) { sendError(res, 502, e1.message + " | InnerTube: " + e2.message); }
   }
 });
 
@@ -330,11 +345,24 @@ app.get("/api/talk", async (req, res) => {
 });
 
 // --- img2text (OCR.space free API; local Tesseract fallback on full hosts) ---
+// The image is downloaded here and uploaded to OCR.space, because OCR.space
+// often cannot fetch the URL itself (the host rate-limits it, e.g. Imgur 429).
 app.get("/api/img2text", async (req, res) => {
   if (!req.query.url) return sendError(res, 400, "missing url");
   try {
     const key = process.env.OCR_SPACE_API_KEY || "helloworld"; // free key: ocr.space (no card)
-    const r = await axios.get("https://api.ocr.space/parse/imageurl", { params: { apikey: key, url: req.query.url, language: "eng", isOverlayRequired: "false", scale: "true" }, timeout: 40000, headers: UA });
+    const img = await axios.get(req.query.url, { responseType: "arraybuffer", timeout: 30000, headers: UA, maxContentLength: 5 * 1024 * 1024 });
+    const buf = Buffer.from(img.data);
+    if (buf.length > 1024 * 1024) throw new Error("image too large for free OCR (max 1 MB)");
+    const ctype = String(img.headers["content-type"] || "image/png").split(";")[0];
+    const ext = ctype === "image/jpeg" ? "jpg" : ctype === "image/webp" ? "webp" : "png";
+    const form = new FormData();
+    form.append("file", buf, { filename: "image." + ext, contentType: ctype });
+    form.append("apikey", key);
+    form.append("language", "eng");
+    form.append("isOverlayRequired", "false");
+    form.append("scale", "true");
+    const r = await axios.post("https://api.ocr.space/parse/image", form, { headers: form.getHeaders(), timeout: 40000, maxContentLength: 5 * 1024 * 1024 });
     const parsed = r.data && r.data.ParsedResults && r.data.ParsedResults[0];
     const text = (parsed && parsed.ParsedText || "").trim();
     if (!text) throw new Error("no text found in image");
