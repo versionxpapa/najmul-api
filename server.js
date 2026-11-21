@@ -142,7 +142,7 @@ footer b{color:#cfc9f2}
 <div class="card"><div class="row"><span class="m">POST</span><button class="mini" data-copy="/api/imgur">Copy</button></div><div class="p">/api/imgur</div><div class="d">Upload an image, get an Imgur link.</div></div>
 <div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/health">Copy</button></div><div class="p">/api/health</div><div class="d">Check if the API is online.</div></div>
 </div>
-<p class="note">Note: YouTube / Facebook / Instagram downloaders need yt-dlp, which cannot run on the free Vercel host &mdash; those return a JSON error there. TikTok, X, Spotify preview and OCR work via free public services. AI, image and search endpoints work fully.</p>
+<p class="note">Note: YouTube, Facebook and Instagram downloaders run through a Python helper (yt-dlp) &mdash; they can take a few seconds and may fail for login-walled videos. TikTok, X, Spotify preview and OCR work via free public services. AI, image and search endpoints work fully.</p>
 <footer>Credits: <b>VERSION-X</b> &nbsp;|&nbsp; Developer: <b>TAWSHIF AHMED NAYIM</b></footer>
 </div>
 <script>
