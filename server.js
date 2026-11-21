@@ -84,89 +84,223 @@ function bestAudioUrl(info) {
   return (fmts[0] || {}).url || null;
 }
 
-const HOME_HTML = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VERSION-X API</title>
+const HOME_HTML = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VERSION-X API — Free AI, Media &amp; Tools API</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
 <style>
+:root{--bg:#0a0a0f;--panel:#12121c;--panel2:#171726;--line:rgba(255,255,255,.09);--txt:#f4f2fb;--mut:#a8a4c2;--red:#ff2d55;--red2:#ff5c39;--green:#22c55e}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#070510;color:#eceaf6;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;min-height:100vh;background-image:radial-gradient(700px 320px at 15% -5%,rgba(124,92,255,.35),transparent 60%),radial-gradient(700px 320px at 90% 0%,rgba(0,210,255,.22),transparent 60%)}
-.wrap{max-width:960px;margin:0 auto;padding:48px 20px 64px}
-.badge{display:inline-block;font-size:12px;letter-spacing:2px;font-weight:700;color:#0b0618;background:linear-gradient(90deg,#8f7bff,#00d2ff);padding:6px 12px;border-radius:999px}
-h1{font-size:52px;line-height:1.05;margin:18px 0 10px;background:linear-gradient(90deg,#a78bff,#00d2ff,#7CFFB2);-webkit-background-clip:text;background-clip:text;color:transparent}
-.sub{color:#b7b3d6;font-size:17px;max-width:640px;line-height:1.6}
-.base{margin:28px 0 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:16px 18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.base .lbl{font-size:12px;letter-spacing:2px;color:#9d97c4;font-weight:700;width:100%}
-.base code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;color:#7CFFB2;word-break:break-all;flex:1}
-button{cursor:pointer;border:0;border-radius:10px;padding:10px 18px;font-weight:700;font-size:14px;background:linear-gradient(90deg,#8f7bff,#00d2ff);color:#0b0618}
-button.copied{background:linear-gradient(90deg,#22c55e,#7CFFB2)}
-.status{font-size:14px;color:#b7b3d6;margin:6px 2px 30px}
-.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#f59e0b;margin-right:7px;vertical-align:1px}
-.dot.on{background:#22c55e;box-shadow:0 0 8px #22c55e}
-h2{font-size:15px;letter-spacing:2px;color:#9d97c4;margin:26px 0 12px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-.card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:16px}
-.card .m{font-size:11px;font-weight:800;letter-spacing:1px;color:#00d2ff}
-.card .p{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;color:#fff;margin:6px 0;word-break:break-all}
-.card .d{font-size:13px;color:#b7b3d6;line-height:1.5}
-.card .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.mini{padding:6px 12px;font-size:12px;border-radius:8px;background:rgba(255,255,255,.10);color:#fff}
-.note{font-size:13px;color:#8f8aa8;margin-top:22px;line-height:1.6}
-footer{margin-top:36px;border-top:1px solid rgba(255,255,255,.10);padding-top:18px;font-size:13px;color:#8f8aa8}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;min-height:100vh;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(720px 340px at 12% -5%,rgba(255,45,85,.28),transparent 60%),radial-gradient(720px 340px at 92% 0%,rgba(255,92,57,.16),transparent 60%),linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:auto,auto,44px 44px,44px 44px}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px;position:relative;z-index:1}
+.nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(10,10,15,.78);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:28px;height:64px}
+.logo{display:flex;align-items:center;gap:10px;font-family:"Space Grotesk",Inter,sans-serif;font-weight:700;font-size:19px;letter-spacing:.5px}
+.logo .mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--red),var(--red2));display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;box-shadow:0 0 18px rgba(255,45,85,.55)}
+.logo b{color:var(--red)}
+.nav .links{display:flex;gap:22px;margin-left:auto;font-size:14px;color:var(--mut)}
+.nav .links a:hover{color:#fff}
+.nav .links a{transition:color .2s}
+.navstat{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:7px 12px;background:rgba(255,255,255,.04)}
+.dot{width:8px;height:8px;border-radius:50%;background:#f59e0b}
+.dot.on{background:var(--green);box-shadow:0 0 8px var(--green)}
+.hero{padding:88px 0 30px;text-align:center}
+.badge{display:inline-block;font-size:12px;letter-spacing:2.5px;font-weight:800;color:#fff;background:linear-gradient(90deg,var(--red),var(--red2));padding:7px 14px;border-radius:999px;box-shadow:0 0 24px rgba(255,45,85,.45)}
+.hero h1{font-family:"Space Grotesk",Inter,sans-serif;font-size:64px;line-height:1.02;margin:22px 0 16px;letter-spacing:-1px}
+.hero h1 .grad{background:linear-gradient(90deg,#ff2d55,#ff5c39,#ffb199);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .sub{color:var(--mut);font-size:18px;line-height:1.65;max-width:640px;margin:0 auto}
+.hero .cta{display:flex;gap:12px;justify-content:center;margin-top:30px;flex-wrap:wrap}
+.btn{cursor:pointer;border:0;border-radius:12px;padding:13px 24px;font-weight:700;font-size:15px;transition:transform .2s,box-shadow .2s}
+.btn:active{transform:scale(.97)}
+.btn-red{background:linear-gradient(135deg,var(--red),var(--red2));color:#fff;box-shadow:0 8px 26px rgba(255,45,85,.4)}
+.btn-red:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(255,45,85,.55)}
+.btn-ghost{background:rgba(255,255,255,.06);color:#fff;border:1px solid var(--line)}
+.btn-ghost:hover{transform:translateY(-2px);border-color:rgba(255,45,85,.6)}
+.btn.copied{background:linear-gradient(135deg,#16a34a,#4ade80);box-shadow:0 8px 26px rgba(34,197,94,.4)}
+.base{margin:30px auto 0;max-width:640px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;text-align:left}
+.base .lbl{font-size:11px;letter-spacing:2px;color:var(--mut);font-weight:700;width:100%}
+.base code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;color:#ff8fa8;word-break:break-all;flex:1}
+.mini{padding:7px 13px;font-size:12px;border-radius:9px;background:rgba(255,255,255,.09);color:#fff;border:0;cursor:pointer;font-weight:700;transition:background .2s}
+.mini:hover{background:rgba(255,45,85,.35)}
+.mini.copied{background:linear-gradient(135deg,#16a34a,#4ade80)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:44px 0 10px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 16px;text-align:center;transition:transform .25s,border-color .25s}
+.stat:hover{transform:translateY(-3px);border-color:rgba(255,45,85,.5)}
+.stat .num{font-family:"Space Grotesk",Inter,sans-serif;font-size:36px;font-weight:700;color:#fff}
+.stat .num em{font-style:normal;color:var(--red)}
+.stat .cap{font-size:13px;color:var(--mut);margin-top:4px}
+section{padding:56px 0 8px}
+.sec-head{text-align:center;margin-bottom:30px}
+.sec-head .kicker{font-size:12px;letter-spacing:3px;font-weight:800;color:var(--red)}
+.sec-head h2{font-family:"Space Grotesk",Inter,sans-serif;font-size:34px;margin:10px 0 8px}
+.sec-head p{color:var(--mut);font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;transition:transform .25s,border-color .25s,box-shadow .25s}
+.card:hover{transform:translateY(-4px);border-color:rgba(255,45,85,.55);box-shadow:0 14px 34px rgba(0,0,0,.45),0 0 0 1px rgba(255,45,85,.25)}
+.card .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card .m{font-size:11px;font-weight:800;letter-spacing:1.5px;color:#ff8fa8}
+.card .p{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px;color:#fff;margin:10px 0 8px;word-break:break-all}
+.card .d{font-size:13.5px;color:var(--mut);line-height:1.6}
+.feat{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.feat .card .ic{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(255,45,85,.25),rgba(255,92,57,.12));border:1px solid rgba(255,45,85,.35);display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.feat .card .ic svg{width:22px;height:22px;stroke:#ff5c7a;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.feat .card h3{font-family:"Space Grotesk",Inter,sans-serif;font-size:17px;margin-bottom:6px}
+.feat .card p{font-size:13.5px;color:var(--mut);line-height:1.6}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;counter-reset:step}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px 20px;position:relative;overflow:hidden}
+.step:before{content:"0" counter(step);counter-increment:step;position:absolute;top:8px;right:16px;font-family:"Space Grotesk",Inter,sans-serif;font-size:56px;font-weight:700;color:rgba(255,45,85,.14)}
+.step h3{font-family:"Space Grotesk",Inter,sans-serif;font-size:17px;margin-bottom:8px}
+.step p{font-size:13.5px;color:var(--mut);line-height:1.6}
+.step code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;color:#ff8fa8;background:rgba(255,45,85,.12);padding:2px 6px;border-radius:6px}
+details{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:10px}
+details summary{cursor:pointer;font-weight:600;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
+details summary::-webkit-details-marker{display:none}
+details summary:after{content:"+";color:var(--red);font-size:22px;font-weight:700}
+details[open ] summary:after{content:"−"}
+details p{color:var(--mut);font-size:14px;line-height:1.65;margin-top:10px}
+.note{font-size:13px;color:#8f8aa8;margin-top:26px;line-height:1.65;text-align:center;max-width:720px;margin-left:auto;margin-right:auto}
+footer{margin-top:64px;border-top:1px solid var(--line);padding:26px 0 34px;font-size:13px;color:#8f8aa8}
+footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:center}
 footer b{color:#cfc9f2}
-@media(max-width:560px){h1{font-size:38px}}
+.rv{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s ease}
+.rv.in{opacity:1;transform:none}
+@media(max-width:760px){.hero h1{font-size:42px}.stats{grid-template-columns:repeat(2,1fr)}.feat{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.nav .links{display:none}section{padding:40px 0 8px}.hero{padding:60px 0 20px}}
 </style></head>
-<body><div class="wrap">
+<body>
+<header class="nav"><div class="wrap">
+<a class="logo" href="/"><span class="mark">X</span>VERSION-<b>X</b>&nbsp;API</a>
+<nav class="links"><a href="#apis">APIs</a><a href="#features">Features</a><a href="#how">How it works</a><a href="#faq">FAQ</a></nav>
+<span class="navstat"><span class="dot" id="dot2"></span><span id="statusText2">Checking&hellip;</span></span>
+</div></header>
+<div class="wrap">
+<section class="hero">
 <span class="badge">FREE &bull; NO API KEY</span>
-<h1>VERSION-X API</h1>
-<p class="sub">Free API &mdash; AI chat, image tools and media downloaders. Copy the base URL and start calling.</p>
-<div class="base"><span class="lbl">API BASE URL</span><code id="baseUrl"></code><button id="copyBase">Copy link</button></div>
-<p class="status"><span class="dot" id="dot"></span><span id="statusText">Checking status&hellip;</span></p>
-<h2>AI &amp; CHAT</h2>
-<div class="grid">
-<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/gpt?prompt=hello">Copy</button></div><div class="p">/api/gpt?prompt=hello</div><div class="d">AI chat reply (Pollinations).</div></div>
-<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/talk?text=hi">Copy</button></div><div class="p">/api/talk?text=hi</div><div class="d">Friendly talk reply.</div></div>
-<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/ai-img?text=cat">Copy</button></div><div class="p">/api/ai-img?text=cat</div><div class="d">Generate two AI images from a prompt.</div></div>
-<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/img2text?url=">Copy</button></div><div class="p">/api/img2text?url=</div><div class="d">Read text from an image (OCR).</div></div>
+<h1>VERSION-<span class="grad">X API</span></h1>
+<p class="sub">Discover, test, and integrate powerful APIs for your next project. AI chat, image tools and media downloaders &mdash; free, with no key and no sign-up.</p>
+<div class="cta">
+<a class="btn btn-red" href="#apis">Explore APIs</a>
+<button class="btn btn-ghost" id="copyBase">Copy Base URL</button>
 </div>
-<h2>MEDIA</h2>
-<div class="grid">
-<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/ytdown?url=">Copy</button></div><div class="p">/api/ytdown?url=</div><div class="d">YouTube video download link.</div></div>
-<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/tikdown?url=">Copy</button></div><div class="p">/api/tikdown?url=</div><div class="d">TikTok video download link.</div></div>
-<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/twitterdown?url=">Copy</button></div><div class="p">/api/twitterdown?url=</div><div class="d">X / Twitter video download link.</div></div>
-<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/fbdown?url=">Copy</button></div><div class="p">/api/fbdown?url=</div><div class="d">Facebook video download link.</div></div>
-<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/ndown?url=">Copy</button></div><div class="p">/api/ndown?url=</div><div class="d">Instagram / Facebook media link.</div></div>
-<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/spotify?q=shape of you">Copy</button></div><div class="p">/api/spotify?q=</div><div class="d">Spotify track audio link.</div></div>
-<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/pintarest?q=cat">Copy</button></div><div class="p">/api/pintarest?q=cat</div><div class="d">Image search results.</div></div>
-<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/images/ppcouple">Copy</button></div><div class="p">/images/ppcouple</div><div class="d">Random anime couple avatars.</div></div>
+<div class="base"><span class="lbl">API BASE URL</span><code id="baseUrl"></code><button class="mini" id="copyBase2">Copy</button></div>
+</section>
+<div class="stats rv">
+<div class="stat"><div class="num"><span data-count="14">0</span></div><div class="cap">Total APIs</div></div>
+<div class="stat"><div class="num"><span data-count="8">0</span></div><div class="cap">Media Tools</div></div>
+<div class="stat"><div class="num"><span data-count="4">0</span></div><div class="cap">AI &amp; Chat Tools</div></div>
+<div class="stat"><div class="num"><span data-count="99.9" data-dec="1">0</span><em>%</em></div><div class="cap">Uptime</div></div>
 </div>
-<h2>TOOLS</h2>
+<section id="features"><div class="sec-head rv"><div class="kicker">WHY VERSION-X</div><h2>Built for developers</h2><p>Fast, free and ready to drop into any project.</p></div>
+<div class="feat">
+<div class="card rv"><div class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></div><h3>Lightning Fast</h3><p>Optimized APIs with quick response times for smooth integration.</p></div>
+<div class="card rv"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z"/><path d="M9 12l2 2 4-4"/></svg></div><h3>Secure by Default</h3><p>No API key, no sign-up, no personal data collected to call an endpoint.</p></div>
+<div class="card rv"><div class="ic"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></div><h3>Easy Integration</h3><p>Plain GET endpoints that return JSON. Works from any language with one fetch.</p></div>
+<div class="card rv"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div><h3>99.9% Uptime</h3><p>Reliable hosting with automatic redeploys and live health checks.</p></div>
+<div class="card rv"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div><h3>Rich Documentation</h3><p>Every endpoint listed with its exact URL and parameters, right on this page.</p></div>
+<div class="card rv"><div class="ic"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.5L3 21l2-5.6A8.5 8.5 0 1 1 21 11.5z"/></svg></div><h3>24/7 Support</h3><p>Questions or a broken endpoint? Reach out and it gets fixed.</p></div>
+</div></section>
+<section id="apis"><div class="sec-head rv"><div class="kicker">API COLLECTION</div><h2>Pick an endpoint, copy, call</h2><p>Every endpoint is free. Tap Copy and paste the full URL into your code.</p></div>
+<h2 style="font-size:15px;letter-spacing:2px;color:#9d97c4;margin:26px 0 12px">AI &amp; CHAT</h2>
 <div class="grid">
-<div class="card"><div class="row"><span class="m">POST</span><button class="mini" data-copy="/api/imgur">Copy</button></div><div class="p">/api/imgur</div><div class="d">Upload an image, get an Imgur link.</div></div>
-<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/health">Copy</button></div><div class="p">/api/health</div><div class="d">Check if the API is online.</div></div>
+<div class="card rv"><div class="top"><span class="m">GET</span><button class="mini" data-copy="/api/gpt?prompt=hello">Copy</button></div><div class="p">/api/gpt?prompt=hello</div><div class="d">AI chat reply (Pollinations).</div></div>
+<div class="card rv"><div class="top"><span class="m">GET</span><button class="mini" data-copy="/api/talk?text=hi">Copy</button></div><div class="p">/api/talk?text=hi</div><div class="d">Friendly talk reply.</div></div>
+<div class="card rv"><div class="top"><span class="m">GET</span><button class="mini" data-copy="/api/ai-img?text=cat">Copy</button></div><div class="p">/api/ai-img?text=cat</div><div class="d">Generate two AI images from a prompt.</div></div>
+<div class="card rv"><div class="top"><span class="m">GET</span><button class="mini" data-copy="/api/img2text?url=">Copy</button></div><div class="p">/api/img2text?url=</div><div class="d">Read text from an image (OCR).</div></div>
+</div>
+<h2 style="font-size:15px;letter-spacing:2px;color:#9d97c4;margin:26px 0 12px">MEDIA</h2>
+<div class="grid">
+<div class="card rv"><div class="top"><span class="m">GET</span><button class="mini" data-copy="/api/ytdown?url=">Copy</button></div><div class="p">/api/ytdown?url=</div><div class="d">YouTube video download link.</div></div>
+<div class="card rv"><div class="top"><span class="m">GET</span><button class="mini" data-copy="/api/tikdown?url=">Copy</button></div><div class="p">/api/tikdown?url=</div><div class="d">TikTok video download link.</div></div>
+<div class="card rv"><div class="top"><span class="m">GET</span><button class="mini" data-copy="/api/twitterdown?url=">Copy</button></div><div class="p">/api/twitterdown?url=</div><div class="d">X / Twitter video download link.</div></div>
+<div class="card rv"><div class="top"><span class="m">GET</span><button class="mini" data-copy="/api/fbdown?url=">Copy</button></div><div class="p">/api/fbdown?url=</div><div class="d">Facebook video download link.</div></div>
+<div class="card rv"><div class="top"><span class="m">GET</span><button class="mini" data-copy="/api/ndown?url=">Copy</button></div><div class="p">/api/ndown?url=</div><div class="d">Instagram / Facebook media link.</div></div>
+<div class="card rv"><div class="top"><span class="m">GET</span><button class="mini" data-copy="/api/spotify?q=shape of you">Copy</button></div><div class="p">/api/spotify?q=</div><div class="d">Spotify track audio link.</div></div>
+<div class="card rv"><div class="top"><span class="m">GET</span><button class="mini" data-copy="/api/pintarest?q=cat">Copy</button></div><div class="p">/api/pintarest?q=cat</div><div class="d">Image search results.</div></div>
+<div class="card rv"><div class="top"><span class="m">GET</span><button class="mini" data-copy="/images/ppcouple">Copy</button></div><div class="p">/images/ppcouple</div><div class="d">Random anime couple avatars.</div></div>
+</div>
+<h2 style="font-size:15px;letter-spacing:2px;color:#9d97c4;margin:26px 0 12px">TOOLS</h2>
+<div class="grid">
+<div class="card rv"><div class="top"><span class="m">POST</span><button class="mini" data-copy="/api/imgur">Copy</button></div><div class="p">/api/imgur</div><div class="d">Upload an image, get an Imgur link.</div></div>
+<div class="card rv"><div class="top"><span class="m">GET</span><button class="mini" data-copy="/api/health">Copy</button></div><div class="p">/api/health</div><div class="d">Check if the API is online.</div></div>
 </div>
 <p class="note">Note: YouTube, Facebook and Instagram downloaders run through a Python helper (yt-dlp) &mdash; they can take a few seconds and may fail for login-walled videos. TikTok, X, Spotify preview and OCR work via free public services. AI, image and search endpoints work fully.</p>
-<footer>Credits: <b>VERSION-X</b> &nbsp;|&nbsp; Developer: <b>TAWSHIF AHMED NAYIM</b></footer>
+</section>
+<section id="how"><div class="sec-head rv"><div class="kicker">HOW IT WORKS</div><h2>Three steps, no sign-up</h2><p>From this page to a working API call in under a minute.</p></div>
+<div class="steps">
+<div class="step rv"><h3>Copy the base URL</h3><p>Tap <b>Copy Base URL</b> above, or copy any endpoint card. The full URL is ready to paste.</p></div>
+<div class="step rv"><h3>Add your parameters</h3><p>Fill in the query part &mdash; for example <code>?prompt=hello</code> or <code>?url=VIDEO_LINK</code>.</p></div>
+<div class="step rv"><h3>Get JSON back</h3><p>Open the URL in a browser or fetch it from code. Every endpoint answers with JSON.</p></div>
+</div></section>
+<section id="faq"><div class="sec-head rv"><div class="kicker">FAQ</div><h2>Questions, answered</h2><p>Everything you need to know before calling.</p></div>
+<div class="rv">
+<details><summary>Do I need an API key?</summary><p>No. Every endpoint on this page is free and works without a key or sign-up.</p></details>
+<details><summary>How do I call an endpoint?</summary><p>Copy the base URL, pick an endpoint from the list, add its parameters, and open it in a browser or fetch it from your code. You get JSON back.</p></details>
+<details><summary>Why do YouTube, Facebook and Instagram downloads take a few seconds?</summary><p>Those three run through a Python helper (yt-dlp) on the server. They can take a few seconds, and videos that need a login may fail.</p></details>
+<details><summary>Is there a rate limit?</summary><p>Fair use applies. If an endpoint is busy, wait a moment and retry &mdash; the OCR endpoint uses a personal key with a generous monthly quota.</p></details>
+<details><summary>What can I build with it?</summary><p>AI chat, image generation, OCR, media downloaders, image search and avatar tools &mdash; free for any project, including bots and apps.</p></details>
+</div></section>
 </div>
+<footer><div class="wrap">
+<span>Credits: <b>VERSION-X</b> &nbsp;|&nbsp; Developer: <b>TAWSHIF AHMED NAYIM</b></span>
+<span id="statusText">Checking status&hellip;</span>
+</div></footer>
 <script>
 (function(){
 var origin = window.location.origin;
-document.getElementById('baseUrl').textContent = origin;
+var baseEl = document.getElementById('baseUrl');
+if (baseEl) baseEl.textContent = origin;
 function copyText(t, btn, label){
   function done(){ var old = btn.textContent; btn.textContent = 'Copied!'; btn.classList.add('copied'); setTimeout(function(){ btn.textContent = old; btn.classList.remove('copied'); }, 1600); }
   if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(t).then(done, function(){ fallback(); }); }
   else { fallback(); }
   function fallback(){ var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(e){} document.body.removeChild(ta); done(); }
 }
-document.getElementById('copyBase').addEventListener('click', function(){ copyText(origin, this); });
+var cb = document.getElementById('copyBase');
+if (cb) cb.addEventListener('click', function(){ copyText(origin, this); });
+var cb2 = document.getElementById('copyBase2');
+if (cb2) cb2.addEventListener('click', function(){ copyText(origin, this); });
 var btns = document.querySelectorAll('[data-copy]');
 for (var i = 0; i < btns.length; i++) {
   btns[i].addEventListener('click', function(){ copyText(origin + this.getAttribute('data-copy'), this); });
 }
 fetch('/api/health').then(function(r){ return r.json(); }).then(function(j){
-  if (j && j.status === 'ok') { document.getElementById('dot').classList.add('on'); document.getElementById('statusText').textContent = 'Online — all systems go'; }
-  else { document.getElementById('statusText').textContent = 'Status unknown'; }
-}).catch(function(){ document.getElementById('statusText').textContent = 'Offline or unreachable'; });
+  var ok = j && j.status === 'ok';
+  var d1 = document.getElementById('dot2'); if (d1 && ok) d1.classList.add('on');
+  var s2 = document.getElementById('statusText2'); if (s2) s2.textContent = ok ? 'Online' : 'Status unknown';
+  var s1 = document.getElementById('statusText'); if (s1) s1.textContent = ok ? 'Online — all systems go' : 'Status unknown';
+}).catch(function(){
+  var s2 = document.getElementById('statusText2'); if (s2) s2.textContent = 'Offline';
+  var s1 = document.getElementById('statusText'); if (s1) s1.textContent = 'Offline or unreachable';
+});
+var io = new IntersectionObserver(function(entries){
+  entries.forEach(function(en){ if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
+}, { threshold: 0.12 });
+var rvs = document.querySelectorAll('.rv');
+for (var k = 0; k < rvs.length; k++) io.observe(rvs[k]);
+var counters = document.querySelectorAll('[data-count]');
+var cio = new IntersectionObserver(function(entries){
+  entries.forEach(function(en){
+    if (!en.isIntersecting) return;
+    var el = en.target; cio.unobserve(el);
+    var target = parseFloat(el.getAttribute('data-count'));
+    var dec = parseInt(el.getAttribute('data-dec') || '0', 10);
+    var start = null, dur = 1100;
+    function tick(ts){
+      if (!start) start = ts;
+      var p = Math.min((ts - start) / dur, 1);
+      var eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = (target * eased).toFixed(dec);
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  });
+}, { threshold: 0.5 });
+for (var c = 0; c < counters.length; c++) cio.observe(counters[c]);
 })();
 </script>
-</body></html>`;
+</body></html>
+`;
 
 app.get("/", (req, res) => {
   res.send(HOME_HTML);
