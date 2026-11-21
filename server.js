@@ -358,10 +358,12 @@ async function ocrSpaceUpload(key, buf, ctype, ext) {
 }
 
 // Hugging Face TrOCR fallback (needs HF_TOKEN env; free Inference API).
-// Tries the new router endpoint first, then the classic one. If the model is
-// still loading (503), waits 3s once and retries the same URL.
-// Diagnostic mode: failures carry the real HF status/body in the message,
-// so a live test shows exactly why HF rejected the call.
+// Only the router endpoint is tried: the classic api-inference.huggingface.co
+// domain no longer resolves (DNS ENOTFOUND from Vercel, confirmed 2026-11-21),
+// and trying it second masked the router result. If the model is still
+// loading (503), waits 3s once and retries. Diagnostic mode: failures carry
+// the real HF status/body in the message, so a live test shows exactly why
+// HF rejected the call.
 function hfErrDetail(e) {
   if (!e.response) return e.message || "no response";
   const body = typeof e.response.data === "string" ? e.response.data : JSON.stringify(e.response.data || "");
@@ -370,29 +372,28 @@ function hfErrDetail(e) {
 async function hfTrOcr(buf) {
   const urls = [
     "https://router.huggingface.co/hf-inference/models/microsoft/trocr-base-printed",
-    "https://api-inference.huggingface.co/models/microsoft/trocr-base-printed",
   ];
   const headers = { Authorization: "Bearer " + process.env.HF_TOKEN, "Content-Type": "application/octet-stream" };
-  let lastErr = null;
+  const errors = [];
   for (const u of urls) {
     try {
       const r = await axios.post(u, buf, { headers, timeout: 8000, maxContentLength: 5 * 1024 * 1024 });
       const t = ((r.data || [])[0] || {}).generated_text || "";
       if (t.trim()) return t.trim();
-      lastErr = new Error("hf: HTTP 200 empty result");
+      errors.push("hf: HTTP 200 empty result");
     } catch (e) {
-      lastErr = new Error("hf: " + hfErrDetail(e));
+      errors.push("hf: " + hfErrDetail(e));
       if (e.response && e.response.status === 503) {
         await new Promise((r2) => setTimeout(r2, 3000));
         try {
           const r = await axios.post(u, buf, { headers, timeout: 8000, maxContentLength: 5 * 1024 * 1024 });
           const t = ((r.data || [])[0] || {}).generated_text || "";
           if (t.trim()) return t.trim();
-        } catch (e2) { lastErr = new Error("hf: " + hfErrDetail(e2)); }
+        } catch (e2) { errors.push("hf: " + hfErrDetail(e2)); }
       }
     }
   }
-  throw lastErr || new Error("hf ocr failed");
+  throw new Error(errors.join(" | ") || "hf ocr failed");
 }
 
 // --- img2text (OCR.space free API; Hugging Face TrOCR fallback; local Tesseract fallback on full hosts) ---
