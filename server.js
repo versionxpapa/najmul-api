@@ -358,10 +358,14 @@ async function ocrSpaceUpload(key, buf, ctype, ext) {
 }
 
 // Hugging Face vision-model OCR fallback (needs HF_TOKEN env; free Inference API).
-// TrOCR is retired on hf-inference (HTTP 400 "Model not supported by provider
-// hf-inference", confirmed 2026-11-21), so the fallback now uses Qwen2-VL via
-// the OpenAI-compatible chat completions endpoint on the router. The model
-// reads the image and returns only the transcribed text.
+// TrOCR is retired on hf-inference and Qwen2-VL-7B-Instruct isn't deployed by
+// any provider (both confirmed 2026-11-21), so the fallback uses
+// Qwen2.5-VL-7B-Instruct via the Featherless AI provider on the router:
+// model "Qwen/Qwen2.5-VL-7B-Instruct:featherless-ai", OpenAI-compatible chat
+// completions endpoint. The model reads the image and returns only the
+// transcribed text. NOTE: Inference Providers may bill per use to the HF
+// account (spending limit shown in HF Settings); no payment method is on file,
+// so a call that needs payment fails instead of charging.
 // Diagnostic mode: failures carry the real HF status/body in the message.
 function hfErrDetail(e) {
   if (!e.response) return e.message || "no response";
@@ -374,7 +378,7 @@ async function hfVlmOcr(buf, ctype) {
     const r = await axios.post(
       "https://router.huggingface.co/v1/chat/completions",
       {
-        model: "Qwen/Qwen2-VL-7B-Instruct",
+        model: "Qwen/Qwen2.5-VL-7B-Instruct:featherless-ai",
         messages: [
           {
             role: "user",
