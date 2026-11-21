@@ -1,4 +1,4 @@
-// NAJMUL API — replacement for the dead nayan-server / nayan-media-downloader
+// VERSION-X API — replacement for the dead nayan-server / nayan-media-downloader
 // packages and the old Replit APIs (main.n4y4n-server.repl.co, mainserver.repl.co,
 // api.nayan-project.repl.co, main-server.nayan-api.repl.co).
 // Credits: VERSION-X | Developer: TAWSHIF AHMED NAYIM
@@ -80,21 +80,95 @@ function bestAudioUrl(info) {
   return (fmts[0] || {}).url || null;
 }
 
+const HOME_HTML = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VERSION-X API</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#070510;color:#eceaf6;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;min-height:100vh;background-image:radial-gradient(700px 320px at 15% -5%,rgba(124,92,255,.35),transparent 60%),radial-gradient(700px 320px at 90% 0%,rgba(0,210,255,.22),transparent 60%)}
+.wrap{max-width:960px;margin:0 auto;padding:48px 20px 64px}
+.badge{display:inline-block;font-size:12px;letter-spacing:2px;font-weight:700;color:#0b0618;background:linear-gradient(90deg,#8f7bff,#00d2ff);padding:6px 12px;border-radius:999px}
+h1{font-size:52px;line-height:1.05;margin:18px 0 10px;background:linear-gradient(90deg,#a78bff,#00d2ff,#7CFFB2);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:#b7b3d6;font-size:17px;max-width:640px;line-height:1.6}
+.base{margin:28px 0 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:16px 18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.base .lbl{font-size:12px;letter-spacing:2px;color:#9d97c4;font-weight:700;width:100%}
+.base code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;color:#7CFFB2;word-break:break-all;flex:1}
+button{cursor:pointer;border:0;border-radius:10px;padding:10px 18px;font-weight:700;font-size:14px;background:linear-gradient(90deg,#8f7bff,#00d2ff);color:#0b0618}
+button.copied{background:linear-gradient(90deg,#22c55e,#7CFFB2)}
+.status{font-size:14px;color:#b7b3d6;margin:6px 2px 30px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#f59e0b;margin-right:7px;vertical-align:1px}
+.dot.on{background:#22c55e;box-shadow:0 0 8px #22c55e}
+h2{font-size:15px;letter-spacing:2px;color:#9d97c4;margin:26px 0 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:16px}
+.card .m{font-size:11px;font-weight:800;letter-spacing:1px;color:#00d2ff}
+.card .p{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;color:#fff;margin:6px 0;word-break:break-all}
+.card .d{font-size:13px;color:#b7b3d6;line-height:1.5}
+.card .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mini{padding:6px 12px;font-size:12px;border-radius:8px;background:rgba(255,255,255,.10);color:#fff}
+.note{font-size:13px;color:#8f8aa8;margin-top:22px;line-height:1.6}
+footer{margin-top:36px;border-top:1px solid rgba(255,255,255,.10);padding-top:18px;font-size:13px;color:#8f8aa8}
+footer b{color:#cfc9f2}
+@media(max-width:560px){h1{font-size:38px}}
+</style></head>
+<body><div class="wrap">
+<span class="badge">FREE &bull; NO API KEY</span>
+<h1>VERSION-X API</h1>
+<p class="sub">Free API &mdash; AI chat, image tools and media downloaders. Copy the base URL and start calling.</p>
+<div class="base"><span class="lbl">API BASE URL</span><code id="baseUrl"></code><button id="copyBase">Copy link</button></div>
+<p class="status"><span class="dot" id="dot"></span><span id="statusText">Checking status&hellip;</span></p>
+<h2>AI &amp; CHAT</h2>
+<div class="grid">
+<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/gpt?prompt=hello">Copy</button></div><div class="p">/api/gpt?prompt=hello</div><div class="d">AI chat reply (Pollinations).</div></div>
+<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/talk?text=hi">Copy</button></div><div class="p">/api/talk?text=hi</div><div class="d">Friendly talk reply.</div></div>
+<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/ai-img?text=cat">Copy</button></div><div class="p">/api/ai-img?text=cat</div><div class="d">Generate two AI images from a prompt.</div></div>
+<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/img2text?url=">Copy</button></div><div class="p">/api/img2text?url=</div><div class="d">Read text from an image (OCR).</div></div>
+</div>
+<h2>MEDIA</h2>
+<div class="grid">
+<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/ytdown?url=">Copy</button></div><div class="p">/api/ytdown?url=</div><div class="d">YouTube video download link.</div></div>
+<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/tikdown?url=">Copy</button></div><div class="p">/api/tikdown?url=</div><div class="d">TikTok video download link.</div></div>
+<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/twitterdown?url=">Copy</button></div><div class="p">/api/twitterdown?url=</div><div class="d">X / Twitter video download link.</div></div>
+<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/fbdown?url=">Copy</button></div><div class="p">/api/fbdown?url=</div><div class="d">Facebook video download link.</div></div>
+<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/ndown?url=">Copy</button></div><div class="p">/api/ndown?url=</div><div class="d">Instagram / Facebook media link.</div></div>
+<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/spotify?q=shape of you">Copy</button></div><div class="p">/api/spotify?q=</div><div class="d">Spotify track audio link.</div></div>
+<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/pintarest?q=cat">Copy</button></div><div class="p">/api/pintarest?q=cat</div><div class="d">Image search results.</div></div>
+<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/images/ppcouple">Copy</button></div><div class="p">/images/ppcouple</div><div class="d">Random anime couple avatars.</div></div>
+</div>
+<h2>TOOLS</h2>
+<div class="grid">
+<div class="card"><div class="row"><span class="m">POST</span><button class="mini" data-copy="/api/imgur">Copy</button></div><div class="p">/api/imgur</div><div class="d">Upload an image, get an Imgur link.</div></div>
+<div class="card"><div class="row"><span class="m">GET</span><button class="mini" data-copy="/api/health">Copy</button></div><div class="p">/api/health</div><div class="d">Check if the API is online.</div></div>
+</div>
+<p class="note">Note: video downloaders and OCR need yt-dlp / Tesseract, which cannot run on the free Vercel host &mdash; those endpoints return a JSON error there. AI, image and search endpoints work fully.</p>
+<footer>Credits: <b>VERSION-X</b> &nbsp;|&nbsp; Developer: <b>TAWSHIF AHMED NAYIM</b></footer>
+</div>
+<script>
+(function(){
+var origin = window.location.origin;
+document.getElementById('baseUrl').textContent = origin;
+function copyText(t, btn, label){
+  function done(){ var old = btn.textContent; btn.textContent = 'Copied!'; btn.classList.add('copied'); setTimeout(function(){ btn.textContent = old; btn.classList.remove('copied'); }, 1600); }
+  if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(t).then(done, function(){ fallback(); }); }
+  else { fallback(); }
+  function fallback(){ var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(e){} document.body.removeChild(ta); done(); }
+}
+document.getElementById('copyBase').addEventListener('click', function(){ copyText(origin, this); });
+var btns = document.querySelectorAll('[data-copy]');
+for (var i = 0; i < btns.length; i++) {
+  btns[i].addEventListener('click', function(){ copyText(origin + this.getAttribute('data-copy'), this); });
+}
+fetch('/api/health').then(function(r){ return r.json(); }).then(function(j){
+  if (j && j.status === 'ok') { document.getElementById('dot').classList.add('on'); document.getElementById('statusText').textContent = 'Online — all systems go'; }
+  else { document.getElementById('statusText').textContent = 'Status unknown'; }
+}).catch(function(){ document.getElementById('statusText').textContent = 'Offline or unreachable'; });
+})();
+</script>
+</body></html>`;
+
 app.get("/", (req, res) => {
-  res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>NAJMUL API</title>
-<style>body{background:#0d0b1e;color:#eee;font-family:Arial,sans-serif;padding:40px}
-h1{letter-spacing:3px}a{color:#8f7bff}code{background:#1d1838;padding:2px 6px;border-radius:6px}</style></head>
-<body><h1>NAJMUL API</h1><p>Replacement APIs for the NAJMUL Messenger bot. Credits: <b>VERSION-X</b> |
-Developer: <b>TAWSHIF AHMED NAYIM</b></p>
-<p>Endpoints: <code>/api/ytdown?url=</code> <code>/api/ndown?url=</code> <code>/api/fbdown?url=</code>
-<code>/api/tikdown?url=</code> <code>/api/twitterdown?url=</code> <code>/api/gpt</code>
-<code>/api/img2text?url=</code> <code>/api/spotify?q=</code> <code>/api/pintarest?q=</code>
-<code>/images/ppcouple</code> <code>/nayan/ai-img?text=</code> <code>/api/talk?text=</code>
-<code>/api/imgur</code> <code>/api/health</code></p>
-<p>Docs: <a href="/api/health">/api/health</a></p></body></html>`);
+  res.send(HOME_HTML);
 });
 
-app.get("/api/health", (req, res) => res.json({ status: "ok", service: "najmul-api", time: new Date().toISOString() }));
+app.get("/api/health", (req, res) => res.json({ status: "ok", service: "version-x-api", time: new Date().toISOString() }));
 
 // GET JSON with axios; some egress proxies break Node's TLS for certain
 // hosts, so fall back to curl (which handles those proxies fine).
@@ -244,7 +318,7 @@ app.get("/images/ppcouple", (req, res) => {
 });
 
 // --- ai-img: two AI images for a prompt (Pollinations, no key) ---
-app.get("/nayan/ai-img", (req, res) => {
+app.get(["/nayan/ai-img", "/api/ai-img"], (req, res) => {
   const text = req.query.text || "";
   if (!text) return sendError(res, 400, "missing text");
   const u = (seed) => `https://image.pollinations.ai/prompt/${encodeURIComponent(text)}?width=1024&height=1024&seed=${seed}&nologo=true`;
@@ -267,6 +341,6 @@ app.post("/api/imgur", async (req, res) => {
 });
 
 if (require.main === module) {
-  app.listen(PORT, () => console.log(`NAJMUL API listening on port ${PORT}`));
+  app.listen(PORT, () => console.log(`VERSION-X API listening on port ${PORT}`));
 }
 module.exports = app;
