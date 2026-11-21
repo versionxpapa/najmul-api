@@ -360,6 +360,13 @@ async function ocrSpaceUpload(key, buf, ctype, ext) {
 // Hugging Face TrOCR fallback (needs HF_TOKEN env; free Inference API).
 // Tries the new router endpoint first, then the classic one. If the model is
 // still loading (503), waits 3s once and retries the same URL.
+// Diagnostic mode: failures carry the real HF status/body in the message,
+// so a live test shows exactly why HF rejected the call.
+function hfErrDetail(e) {
+  if (!e.response) return e.message || "no response";
+  const body = typeof e.response.data === "string" ? e.response.data : JSON.stringify(e.response.data || "");
+  return "HTTP " + e.response.status + " " + body.slice(0, 200);
+}
 async function hfTrOcr(buf) {
   const urls = [
     "https://router.huggingface.co/hf-inference/models/microsoft/trocr-base-printed",
@@ -372,16 +379,16 @@ async function hfTrOcr(buf) {
       const r = await axios.post(u, buf, { headers, timeout: 8000, maxContentLength: 5 * 1024 * 1024 });
       const t = ((r.data || [])[0] || {}).generated_text || "";
       if (t.trim()) return t.trim();
-      lastErr = new Error("empty hf ocr result");
+      lastErr = new Error("hf: HTTP 200 empty result");
     } catch (e) {
-      lastErr = e;
+      lastErr = new Error("hf: " + hfErrDetail(e));
       if (e.response && e.response.status === 503) {
         await new Promise((r2) => setTimeout(r2, 3000));
         try {
           const r = await axios.post(u, buf, { headers, timeout: 8000, maxContentLength: 5 * 1024 * 1024 });
           const t = ((r.data || [])[0] || {}).generated_text || "";
           if (t.trim()) return t.trim();
-        } catch (e2) { lastErr = e2; }
+        } catch (e2) { lastErr = new Error("hf: " + hfErrDetail(e2)); }
       }
     }
   }
@@ -406,7 +413,7 @@ app.get("/api/img2text", async (req, res) => {
       // one retry after a pause.
       if (e.response && (e.response.status === 429 || e.response.status >= 500)) {
         if (process.env.HF_TOKEN) {
-          try { return await hfTrOcr(buf); } catch (_) { throw e; }
+          try { return await hfTrOcr(buf); } catch (hfErr) { throw new Error("ocr.space 429; hf fallback failed: " + hfErr.message); }
         }
         await new Promise((r2) => setTimeout(r2, 4000));
         return ocrSpaceUpload(key, buf, ctype, ext);
