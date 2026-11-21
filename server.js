@@ -266,4 +266,7 @@ app.post("/api/imgur", async (req, res) => {
   } catch (e) { sendError(res, 502, (e.response && e.response.data && e.response.data.data && e.response.data.data.error) || e.message); }
 });
 
-app.listen(PORT, () => console.log(`NAJMUL API listening on port ${PORT}`));
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`NAJMUL API listening on port ${PORT}`));
+}
+module.exports = app;
