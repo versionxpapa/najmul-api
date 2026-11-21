@@ -1,9 +1,1 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "functions": {
-    "api/index.js": { "excludeFiles": "tessdata/**" }
-  },
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api" }
-  ]
-}
+{"$schema":"https://openapi.vercel.sh/vercel.json","functions":{"api/index.js":{"excludeFiles":"tessdata/**"}},"rewrites":[{"destination":"/api","source":"/api/(health|gpt|talk|ai-img|pintarest|imgur|img2text|spotify|tikdown|twitterdown|ndown|fbdown)"}]}

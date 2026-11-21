@@ -372,7 +372,7 @@ app.get("/api/img2text", async (req, res) => {
     const text = await ocrSpaceUpload(key, buf, ctype, ext).catch(async (e) => {
       // The shared demo key is often rate-limited (429) — one retry after a pause.
       if (e.response && (e.response.status === 429 || e.response.status >= 500)) {
-        await new Promise((r2) => setTimeout(r2, 2500));
+        await new Promise((r2) => setTimeout(r2, 4000));
         return ocrSpaceUpload(key, buf, ctype, ext);
       }
       throw e;
