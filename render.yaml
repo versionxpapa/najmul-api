@@ -1,0 +1,18 @@
+# Render Blueprint — one-click deploy of the NAJMUL API (free tier).
+# In Render: New + -> Blueprint -> connect the repo containing this file.
+services:
+  - type: web
+    name: najmul-api
+    env: node
+    plan: free
+    buildCommand: |
+      npm install
+      mkdir -p bin
+      curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o bin/yt-dlp
+      chmod +x bin/yt-dlp
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.1
+      - key: PORT
+        value: 10000
