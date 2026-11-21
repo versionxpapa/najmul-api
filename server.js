@@ -357,7 +357,38 @@ async function ocrSpaceUpload(key, buf, ctype, ext) {
   return (parsed && parsed.ParsedText || "").trim();
 }
 
-// --- img2text (OCR.space free API; local Tesseract fallback on full hosts) ---
+// Hugging Face TrOCR fallback (needs HF_TOKEN env; free Inference API).
+// Tries the new router endpoint first, then the classic one. If the model is
+// still loading (503), waits 3s once and retries the same URL.
+async function hfTrOcr(buf) {
+  const urls = [
+    "https://router.huggingface.co/hf-inference/models/microsoft/trocr-base-printed",
+    "https://api-inference.huggingface.co/models/microsoft/trocr-base-printed",
+  ];
+  const headers = { Authorization: "Bearer " + process.env.HF_TOKEN, "Content-Type": "application/octet-stream" };
+  let lastErr = null;
+  for (const u of urls) {
+    try {
+      const r = await axios.post(u, buf, { headers, timeout: 8000, maxContentLength: 5 * 1024 * 1024 });
+      const t = ((r.data || [])[0] || {}).generated_text || "";
+      if (t.trim()) return t.trim();
+      lastErr = new Error("empty hf ocr result");
+    } catch (e) {
+      lastErr = e;
+      if (e.response && e.response.status === 503) {
+        await new Promise((r2) => setTimeout(r2, 3000));
+        try {
+          const r = await axios.post(u, buf, { headers, timeout: 8000, maxContentLength: 5 * 1024 * 1024 });
+          const t = ((r.data || [])[0] || {}).generated_text || "";
+          if (t.trim()) return t.trim();
+        } catch (e2) { lastErr = e2; }
+      }
+    }
+  }
+  throw lastErr || new Error("hf ocr failed");
+}
+
+// --- img2text (OCR.space free API; Hugging Face TrOCR fallback; local Tesseract fallback on full hosts) ---
 // The image is downloaded here and uploaded to OCR.space, because OCR.space
 // often cannot fetch the URL itself (the host rate-limits it, e.g. Imgur 429).
 app.get("/api/img2text", async (req, res) => {
@@ -370,8 +401,13 @@ app.get("/api/img2text", async (req, res) => {
     const ctype = String(img.headers["content-type"] || "image/png").split(";")[0];
     const ext = ctype === "image/jpeg" ? "jpg" : ctype === "image/webp" ? "webp" : "png";
     const text = await ocrSpaceUpload(key, buf, ctype, ext).catch(async (e) => {
-      // The shared demo key is often rate-limited (429) — one retry after a pause.
+      // The shared demo key is often rate-limited (429). If a Hugging Face
+      // token is configured, fall back to TrOCR instead of waiting; otherwise
+      // one retry after a pause.
       if (e.response && (e.response.status === 429 || e.response.status >= 500)) {
+        if (process.env.HF_TOKEN) {
+          try { return await hfTrOcr(buf); } catch (_) { throw e; }
+        }
         await new Promise((r2) => setTimeout(r2, 4000));
         return ocrSpaceUpload(key, buf, ctype, ext);
       }
